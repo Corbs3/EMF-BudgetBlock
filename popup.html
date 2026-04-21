@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --amber: #FFB800;
+      --amber-dark: #0A0A0A;
+      --red: #CC1111;
+      --bg: #0A0A0A;
+      --surface: #181818;
+      --border: #2A2A2A;
+      --border-light: #141414;
+      --white: #FFFFFF;
+      --off-white: #DDDDDD;
+      --muted: #888888;
+    }
+
+    body {
+      width: 360px;
+      background: var(--bg);
+      color: var(--white);
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      font-size: 13px;
+      position: relative;
+    }
+
+    .amber-stripe { height: 4px; background: var(--amber); }
+
+    /* ── Header ── */
+    .header {
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 15px; font-weight: 800; letter-spacing: -0.5px; color: var(--white); }
+    .logo em { color: var(--amber); font-style: normal; }
+    .header-meta { font-size: 11px; color: var(--muted); }
+    .header-meta.blocked { color: var(--amber); font-weight: 700; }
+
+    /* ── Site list ── */
+    .site-list { max-height: 280px; overflow-y: auto; }
+    .site-list::-webkit-scrollbar { width: 3px; }
+    .site-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .site-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.1s;
+    }
+    .site-row:hover { background: #111; }
+    .site-row.disabled { opacity: 0.4; }
+
+    /* toggle */
+    .toggle {
+      flex-shrink: 0; width: 30px; height: 17px;
+      background: #2A2A2A; border-radius: 10px; border: none;
+      cursor: pointer; position: relative; transition: background 0.18s;
+    }
+    .toggle.on { background: var(--amber); }
+    .toggle::after {
+      content: ''; position: absolute;
+      top: 2.5px; left: 2.5px;
+      width: 12px; height: 12px;
+      background: #555; border-radius: 50%;
+      transition: transform 0.18s, background 0.18s;
+    }
+    .toggle.on::after { transform: translateX(13px); background: var(--amber-dark); }
+
+    /* site info */
+    .site-info { flex: 1; min-width: 0; }
+    .site-name { font-size: 13px; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .site-stats { display: flex; align-items: center; gap: 7px; margin-top: 5px; }
+
+    .bar-track { flex: 1; height: 3px; background: #222; border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .bar-fill.ok   { background: var(--amber); }
+    .bar-fill.warn { background: #FF8C00; }
+    .bar-fill.full { background: var(--red); }
+
+    .time-label { font-size: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--off-white); }
+    .time-label.warn { color: #FF8C00; font-weight: 600; }
+    .time-label.full { color: var(--red); font-weight: 700; }
+
+    /* road-sign badges */
+    .badge { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; padding: 2px 5px; border-radius: 3px; }
+    .badge.hard    { background: var(--red); color: #fff; }
+    .badge.overlay { background: var(--amber); color: var(--amber-dark); }
+
+    /* action buttons */
+    .actions { display: flex; gap: 2px; }
+    .icon-btn {
+      width: 26px; height: 26px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 5px; transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+    .icon-btn:hover { background: var(--surface); color: var(--white); border-color: #444; }
+    .icon-btn.del:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── Empty state ── */
+    .empty { padding: 32px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    /* ── Add section ── */
+    .add-section { border-top: 1px solid var(--border); }
+    .add-toggle {
+      width: 100%; padding: 11px 16px;
+      background: transparent; border: none;
+      color: var(--muted); font-size: 12px; cursor: pointer;
+      text-align: left; display: flex; align-items: center; gap: 7px;
+      transition: color 0.15s;
+    }
+    .add-toggle:hover { color: var(--off-white); }
+    .add-toggle svg { flex-shrink: 0; transition: transform 0.2s; }
+    .add-toggle.open svg { transform: rotate(45deg); }
+
+    .add-form { display: none; padding: 0 16px 14px; }
+    .add-form.visible { display: block; }
+
+    .field { margin-bottom: 10px; }
+    .field label {
+      display: block; font-size: 10px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; font-weight: 700;
+    }
+    .field input[type="text"],
+    .field input[type="number"] {
+      width: 100%; padding: 7px 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--white); font-size: 13px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--amber); }
+    .field input.error { border-color: var(--red); }
+
+    /* budget quick picks */
+    .picks { display: flex; gap: 5px; margin-bottom: 6px; }
+    .pick {
+      flex: 1; padding: 5px 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--muted); font-size: 11px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.12s;
+    }
+    .pick:hover { border-color: #444; color: var(--off-white); }
+    .pick.active { background: #2A1E00; border-color: var(--amber); color: var(--amber); }
+
+    /* block style selector */
+    .style-sel {
+      display: flex; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .style-opt {
+      flex: 1; padding: 7px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      cursor: pointer; border: none; background: transparent; transition: all 0.12s;
+    }
+    .style-opt.active.hard    { background: #2A0000; color: var(--red); }
+    .style-opt.active.overlay { background: #2A1E00; color: var(--amber); }
+
+    /* add button */
+    .add-btn {
+      width: 100%; padding: 9px; border: none; border-radius: 7px;
+      background: var(--amber); color: var(--amber-dark);
+      font-size: 13px; font-weight: 800; cursor: pointer; margin-top: 4px;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: #FFCC44; }
+
+    /* ── Edit modal ── */
+    .modal-wrap {
+      display: none; position: absolute;
+      top: 0; left: 0; right: 0; min-height: 100%;
+      background: rgba(0,0,0,0.9); z-index: 200;
+      align-items: flex-start; justify-content: center; padding: 20px 16px;
+    }
+    .modal-wrap.open { display: flex; }
+    body.modal-open { min-height: 340px; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; width: 100%;
+    }
+    .modal-amber-bar { height: 3px; background: var(--amber); border-radius: 2px; margin-bottom: 14px; }
+    .modal-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .modal-domain { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .modal-domain span { color: var(--off-white); font-weight: 600; }
+
+    .modal-foot { display: flex; gap: 8px; margin-top: 12px; }
+    .m-cancel {
+      flex: 1; padding: 8px; background: transparent;
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--muted); font-size: 12px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .m-cancel:hover { border-color: #444; color: var(--off-white); }
+    .m-save {
+      flex: 1; padding: 8px; background: var(--amber); border: none;
+      border-radius: 6px; color: var(--amber-dark);
+      font-size: 12px; font-weight: 800; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .m-save:hover { background: #FFCC44; }
+
+    .reset-link {
+      display: block; text-align: center; font-size: 11px;
+      color: #444; cursor: pointer; margin-top: 10px; transition: color 0.15s;
+    }
+    .reset-link:hover { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="amber-stripe"></div>
+
+<div class="header">
+  <div class="logo">Budget<em>Block</em></div>
+  <div class="header-meta" id="header-meta">0 sites</div>
+</div>
+
+<div class="site-list" id="site-list">
+  <div class="empty">No sites added yet.<br>Hit the button below to get started.</div>
+</div>
+
+<div class="add-section">
+  <button class="add-toggle" id="add-toggle">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    Add a site
+  </button>
+
+  <div class="add-form" id="add-form">
+    <div class="field">
+      <label>Domain</label>
+      <input type="text" id="new-domain" placeholder="e.g. reddit.com">
+    </div>
+    <div class="field">
+      <label>Daily budget</label>
+      <div class="picks" id="add-picks">
+        <button class="pick" data-v="5">5m</button>
+        <button class="pick" data-v="10">10m</button>
+        <button class="pick active" data-v="15">15m</button>
+        <button class="pick" data-v="30">30m</button>
+        <button class="pick" data-v="60">1h</button>
+      </div>
+      <input type="number" id="new-budget" value="15" min="1" max="480">
+    </div>
+    <div class="field">
+      <label>When time runs out</label>
+      <div class="style-sel" id="add-style-sel">
+        <button class="style-opt hard active" data-s="hard">Hard block</button>
+        <button class="style-opt overlay" data-s="overlay">Shame overlay</button>
+      </div>
+    </div>
+    <button class="add-btn" id="add-btn">Add site</button>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-wrap" id="modal-wrap">
+  <div class="modal">
+    <div class="modal-amber-bar"></div>
+    <div class="modal-title">Edit site</div>
+    <div class="modal-domain">Domain: <span id="edit-domain-label"></span></div>
+    <input type="hidden" id="edit-idx">
+    <div class="field">
+      <label>Daily budget</label>
+      <div class="picks" id="edit-picks">
+        <button class="pick" data-v="5">5m</button>
+        <button class="pick" data-v="10">10m</button>
+        <button class="pick" data-v="15">15m</button>
+        <button class="pick" data-v="30">30m</button>
+        <button class="pick" data-v="60">1h</button>
+      </div>
+      <input type="number" id="edit-budget" min="1" max="480">
+    </div>
+    <div class="field">
+      <label>When time runs out</label>
+      <div class="style-sel" id="edit-style-sel">
+        <button class="style-opt hard" data-s="hard">Hard block</button>
+        <button class="style-opt overlay" data-s="overlay">Shame overlay</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="m-cancel" id="modal-cancel">Cancel</button>
+      <button class="m-save" id="modal-save">Save</button>
+    </div>
+    <span class="reset-link" id="reset-usage">Reset today's usage for this site</span>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

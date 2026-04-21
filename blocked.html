@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Blocked — BudgetBlock</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0A0A0A; color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .amber-bar { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: #FFB800; }
+    .card { max-width: 400px; width: 100%; text-align: center; padding: 52px 44px; }
+    .sign-ring {
+      width: 80px; height: 80px;
+      border: 7px solid #CC1111; border-radius: 50%;
+      margin: 0 auto 28px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .sign-ring::after {
+      content: ''; position: absolute;
+      width: 72px; height: 7px;
+      background: #CC1111; border-radius: 3px; transform: rotate(-45deg);
+    }
+    h1 { font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 10px; }
+    .domain { color: #FFB800; }
+    p { font-size: 14px; color: #AAAAAA; line-height: 1.7; margin-bottom: 6px; }
+    .bar-wrap { width: 100%; height: 4px; background: #1A1A1A; border-radius: 2px; margin: 28px 0; overflow: hidden; }
+    .bar-fill { height: 100%; background: #CC1111; width: 100%; border-radius: 2px; }
+    .reset-note { font-size: 13px; color: #555; margin-top: 16px; }
+    .reset-note span { color: #888; font-weight: 600; }
+    .close-btn {
+      display: inline-block; margin-top: 24px;
+      padding: 9px 22px; border: 1px solid #2A2A2A; border-radius: 8px;
+      color: #666; font-size: 12px; font-weight: 600;
+      cursor: pointer; text-decoration: none; letter-spacing: 0.02em;
+      transition: border-color 0.18s, color 0.18s;
+      background: transparent;
+    }
+    .close-btn:hover { border-color: #555; color: #AAAAAA; }
+    .branding {
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; font-weight: 800; color: #222; letter-spacing: -0.3px;
+    }
+    .branding em { color: #333; font-style: normal; }
+  </style>
+</head>
+<body>
+  <div class="amber-bar"></div>
+  <div class="card">
+    <div class="sign-ring"></div>
+    <h1>Time's up on <span class="domain" id="js-domain">this site</span></h1>
+    <p id="js-msg">Your daily budget is up.</p>
+    <div class="bar-wrap"><div class="bar-fill"></div></div>
+    <p class="reset-note">Budget resets at <span id="js-reset">midnight</span>.</p>
+    <button class="close-btn" id="js-close">← Close tab</button>
+  </div>
+  <div class="branding">Budget<em>Block</em></div>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+    const domain = p.get('domain');
+    const budget = p.get('budget');
+
+    if (domain) document.getElementById('js-domain').textContent = domain;
+    if (budget) document.getElementById('js-msg').textContent = `You've used your full ${budget}-minute daily budget.`;
+
+    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+    document.getElementById('js-reset').textContent =
+      midnight.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    document.getElementById('js-close').addEventListener('click', () => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) chrome.tabs.remove(tabs[0].id);
+      });
+    });
+  </script>
+</body>
+</html>
