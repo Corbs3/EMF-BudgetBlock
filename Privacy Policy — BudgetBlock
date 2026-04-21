@@ -1,0 +1,43 @@
+# Privacy Policy — BudgetBlock
+
+**Last updated: April 2026**
+
+## Overview
+
+BudgetBlock is a Chrome extension that lets you set daily time budgets for websites. This policy explains how the extension handles your data.
+
+## Data Collected
+
+BudgetBlock stores the following data **locally in your browser only**:
+
+- The list of sites you have configured, including their domains, daily budgets, and block style preferences
+- Daily usage data per domain (time spent in milliseconds) for the last 7 days
+
+This data is used solely to enforce your time budgets and display usage in the extension popup.
+
+## Data Storage
+
+- Site settings are stored using Chrome's `storage.sync` API, which may sync across your Chrome profile if you are signed in to Chrome with sync enabled
+- Usage data is stored using Chrome's `storage.local` API and stays on the current device
+
+No data is transmitted to any external server or third party.
+
+## Data Sharing
+
+No data is collected, transmitted, or shared with any external server, service, or third party.
+
+## Permissions
+
+- **storage** — used to save site settings and usage data
+- **alarms** — used to update the badge counter every minute and trigger the midnight usage reset
+- **tabs** — used to track which tab is active in order to measure time spent on configured sites
+- **windows** — used to detect when Chrome loses focus so the timer can be paused
+- **host_permissions (`<all_urls>`)** — required to run the content script on every page so budget enforcement can work on any site you configure
+
+## Changes to This Policy
+
+This policy may be updated occasionally. The latest version will always be available at this URL.
+
+## Contact
+
+For questions about this extension, open an issue on the GitHub repository.
